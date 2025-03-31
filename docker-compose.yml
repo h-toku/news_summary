@@ -1,0 +1,32 @@
+services:
+  flask_app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql # mysql コンテナに依存
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=tokuhara
+      - MYSQL_PASSWORD=password
+      - MYSQL_DB=news_summary
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: password # rootユーザーのパスワード
+      MYSQL_DATABASE: news_summary # 作成するデータベース名
+      MYSQL_USER: tokuhara # 作成するユーザー名
+      MYSQL_PASSWORD: top04259984 # 作成するユーザーのパスワード
+    ports:
+      - "3306:3306" # MySQLのポートをホストとコンテナでマッピング
+    volumes:
+      - mysql_data:/var/lib/mysql # 永続化するボリューム
+
+volumes:
+  mysql_data:
+    driver: local

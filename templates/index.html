@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>news</title>
+
+    <style>
+        /* ヘッダーのスタイル */
+        h1 {
+            color: #fff;
+            background-color: #333;
+            padding: 10px;
+            text-align: center;
+            line-height: 1;
+        }
+
+        h2 {
+            color: #fff;
+            background-color: #333;
+            padding: 6px;
+            text-align: center;
+        }
+
+        /* カテゴリ選択フォーム */
+        form {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        select,
+        input {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 6px 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* ニュースリストのスタイル */
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        li:hover {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        strong {
+            color: #333;
+        }
+
+        em {
+            color: #888;
+        }
+
+        /* ページネーションのスタイル */
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .pagination a {
+            margin: 0 10px;
+            padding: 6px 12px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .pagination a:hover {
+            background-color: #0056b3;
+        }
+
+        .pagination span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>
+        <font size="10">最新ニュース</font><br>
+        <font size="4">最新のニュースをAIが要約してます。</font>
+    </h1>
+
+    <!-- ユーザー認証の状態を表示 -->
+    <div class="user-info">
+        {% if current_user.is_authenticated %}
+        <p>Welcome{{ current_user.username }}!!</p>
+        <a href="{{ url_for('logout') }}">ログアウト</a>
+        {% else %}
+        <a href="{{ url_for('login') }}">ログイン</a>
+        {% endif %}
+    </div>
+
+    <!-- カテゴリ選択フォーム -->
+    <form method="get" action="/">
+        <label for="category">category:</label>
+        <select name="category" id="category">
+            {% for cat in categories %}
+            <option value="{{ cat }}" {% if cat==category %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Enter</button>
+    </form>
+
+    <!-- 検索フォーム -->
+    <form method="get" action="/">
+        <label for="search">Search:</label>
+        <input type="text" id="search" name="search" value="{{ search }}">
+        <button type="submit">Enter</button>
+    </form>
+
+    <ul>
+        {% for news in news_list %}
+        <li>
+            <a href="{{ news.url }}" target="_blank">{{ news.title }}</a><br>
+            <strong>要約:</strong> {{ news.summary }}<br>
+            <em>投稿日: {{ news.publishedAt }}</em>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- ページネーション -->
+    <div>
+        {% if page > 1 %}
+        <a href="?category={{ category }}&page={{ page - 1 }}&search={{ search }}">previous</a>
+        {% endif %}
+
+        <span>ページ {{ page }}</span>
+
+        {% if next_page %}
+        <a href="?category={{ category }}&page={{ next_page }}&search={{ search }}">next</a>
+        {% endif %}
+    </div>
+</body>
+
+</html>
