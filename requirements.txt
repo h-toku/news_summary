@@ -7,3 +7,5 @@ flask-mysqldb
 flask-login
 gunicorn
 flask-wtf
+newsapi-python
+hf_xet

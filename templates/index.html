@@ -100,14 +100,17 @@
             color: white;
             text-decoration: none;
             border-radius: 5px;
+            text-align: center;
         }
 
         .pagination a:hover {
             background-color: #0056b3;
+            text-align: center;
         }
 
         .pagination span {
             font-weight: bold;
+            text-align: center;
         }
     </style>
 </head>
@@ -150,7 +153,7 @@
         {% for news in news_list %}
         <li>
             <a href="{{ news.url }}" target="_blank">{{ news.title }}</a><br>
-            <strong>要約:</strong> {{ news.summary }}<br>
+            <strong>AI要約:</strong> {{ news.summary }}<br>
             <em>投稿日: {{ news.publishedAt }}</em>
         </li>
         {% endfor %}

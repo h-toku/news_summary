@@ -23,7 +23,7 @@ services:
       MYSQL_USER: tokuhara # 作成するユーザー名
       MYSQL_PASSWORD: top04259984 # 作成するユーザーのパスワード
     ports:
-      - "3306:3306" # MySQLのポートをホストとコンテナでマッピング
+      - "3330:3330" # MySQLのポートをホストとコンテナでマッピング
     volumes:
       - mysql_data:/var/lib/mysql # 永続化するボリューム
 

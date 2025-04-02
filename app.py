@@ -9,7 +9,7 @@ from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired, Length
 
 # ここではAIによる要約処理を行うためにT5というモデルを使っています
-summarizer = pipeline("summarization", model="t5-small")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
 # Flaskアプリケーションの初期化。アプリ名（__name__）を引数に渡す。
 app = Flask(__name__)
@@ -17,13 +17,14 @@ app = Flask(__name__)
 # セッションの秘密鍵（暗号化などに使われます）
 app.secret_key = "top04259984"  # アプリケーションのセッションデータを保護するために必要
 
-# ニュースカテゴリを定義しています。これにより、ユーザーがカテゴリごとにニュースを絞り込めます。
+# ニュースカテゴリ（GNewsに対応）
 CATEGORIES = [
-    'business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'
+    'general', 'world', 'nation', 'business', 'technology',
+    'entertainment', 'sports', 'science', 'health'
 ]
 
-# ニュースAPIからデータを取得するためのAPIキー（ニュース情報を提供する外部サービスから取得したもの）
-API_KEY = "de42c283e76946ad9c94252b4d20f42a"  # ここに自分のAPIキーを入れます
+# GNews APIキー
+GNEWS_API_KEY = "b91e84cbe135568c5bb4c33ce5ac51b6"
 
 # MySQLデータベースに接続するための設定
 app.config['MYSQL_HOST'] = 'mysql'  # MySQLサーバのホスト名（コンテナ名など）
@@ -108,60 +109,76 @@ def logout():
 
 # ニュースを取得する関数。指定したカテゴリーとページ番号に基づいてニュースを取得
 def get_news(category, page, search=None):
-    NEWS_URL = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={API_KEY}&category={category}&page={page}&pageSize=5"
+    url = "https://gnews.io/api/v4/top-headlines"
+    params = {
+        "token": GNEWS_API_KEY,
+        "lang": "ja",
+        "country": "jp",
+        "category": category,
+        "max": 5,
+        "sortby": "publishedAt", 
+    }
     if search:
-        NEWS_URL += f"&q={search}"  # 検索キーワードをURLに追加
-    response = requests.get(NEWS_URL)  # ニュースAPIからデータを取得
-    print(response.json())  # レスポンスの内容を表示して確認
-    return response.json()  # JSON形式で返す
+        params["q"] = search  # 検索ワードを追加
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        news_data = response.json()
+        return news_data.get("articles", [])  # 記事リストを返す
+    else:
+        return []  # 取得失敗時は空リスト
 
 # ニュース記事を要約する関数
 def summarize_text(text):
     if not text:
-        return "要約できる本文がありません。"  # 本文が空ならこのメッセージを返す
-    input_length = len(text.split())  # 本文の単語数を数える
-    max_len = min(50, input_length * 2)  # 要約の最大長さを決定
-    summary = summarizer(text, max_length=max_len, min_length=10, do_sample=False)  # 要約を生成
-    return summary[0]['summary_text']  # 要約したテキストを返す
+        return "要約できる本文がありません。"
 
-# トップページの処理。GETリクエストに基づいてニュースを表示
+    # 単語数が少ない場合は要約せずそのまま返す
+    if len(text.split()) < 20:
+        return text
+
+    try:
+        summary = summarizer(text, max_length=50, min_length=30, do_sample=True, top_k=50, top_p=0.95)
+        return summary[0]['summary_text']
+    except Exception as e:
+        print("Summarization Error:", e)
+        return text  # エラー時は元の文章を返す
+
+# ホームページ（ニュース一覧）
 @app.route("/", methods=["GET", "POST"])
 def home():
-    # ページ番号とカテゴリ、検索キーワードを取得
     page = request.args.get("page", 1, type=int)
     category = request.args.get('category', 'general')
-    search = request.args.get('search', '')  # 検索キーワードを取得
+    search = request.args.get('search', '')
 
-    # ニュースをAPIから取得
-    news_data = get_news(category, page, search)
-    articles = news_data.get("articles", [])  # 記事データを取得
+    # GNews APIからニュースを取得
+    articles = get_news(category, page, search)
 
-    # 記事がなければエラーメッセージを表示
     if not articles:
-        return "Error: No articles found", 500
+        flash("該当するニュースが見つかりませんでした。", "warning")
+        return render_template("index.html", news_list=[], category=category, page=page, next_page=None, categories=CATEGORIES, search=search)
 
     news_list = []
-    # 各記事を要約してリストに追加
     for article in articles:
         title = article.get("title", "No Title")
         description = article.get("description", "No Description")
         published_at = article.get("publishedAt", "No Date")
+        url = article.get("url", "#")
 
         # 要約を生成
         summary = summarize_text(description)
         news_list.append({
             "title": title,
             "summary": summary,
-            "url": article.get("url", "#"),
+            "url": url,
             "publishedAt": published_at
         })
 
-    # 次のページがあれば次ページの番号を設定
     next_page = page + 1 if len(articles) == 5 else None
 
-    # 現在のページ、次ページをテンプレートに渡す
     return render_template("index.html", news_list=news_list, category=category, page=page, next_page=next_page, categories=CATEGORIES, search=search)
 
-# アプリケーションの実行
+# アプリ実行
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000, debug=True)  # アプリケーションをポート3000で実行（デバッグモード）
+    app.run(host="0.0.0.0", port=3000, debug=True)
+
