@@ -20,6 +20,13 @@
         <button type="submit">Login</button>
     </form>
 
+    <br>
+
+    <!-- 会員登録ページへのリンク -->
+    <a href="{{ url_for('auth.register') }}">
+        <button>会員登録</button>
+    </a>
+
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul>

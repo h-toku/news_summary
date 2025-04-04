@@ -1,48 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>会員登録</title>
 </head>
 
 <body>
-    <h1>Register</h1>
+    <h1>会員登録</h1>
 
     <form method="POST">
-        {{ form.hidden_tag() }} <!-- CSRFトークンを含む -->
+        <!-- 会員登録フォーム -->
+        <label for="username">ユーザー名:</label>
+        <input type="text" id="username" name="username" required><br><br>
 
-        <div>
-            <label for="username">Username</label>
-            {{ form.username(class="form-control") }} <!-- Flask-WTF フォームフィールド -->
-            {% for error in form.username.errors %} <!-- エラーメッセージの表示 -->
-            <p class="error">{{ error }}</p>
-            {% endfor %}
-        </div>
+        <label for="password">パスワード:</label>
+        <input type="password" id="password" name="password" required><br><br>
 
-        <div>
-            <label for="password">Password</label>
-            {{ form.password(class="form-control") }} <!-- Flask-WTF フォームフィールド -->
-            {% for error in form.password.errors %}
-            <p class="error">{{ error }}</p>
-            {% endfor %}
-        </div>
-
-        <div>
-            <button type="submit">Register</button>
-        </div>
+        <button type="submit">登録</button>
     </form>
 
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <ul>
-        {% for message in messages %}
-        <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
+    <br>
+    <a href="{{ url_for('auth.login') }}">ログインページへ戻る</a>
 </body>
 
 </html>

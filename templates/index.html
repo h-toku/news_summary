@@ -125,9 +125,9 @@
     <div class="user-info">
         {% if current_user.is_authenticated %}
         <p>Welcome{{ current_user.username }}!!</p>
-        <a href="{{ url_for('logout') }}">ログアウト</a>
+        <a href="{{ url_for('auth.logout') }}">ログアウト</a>
         {% else %}
-        <a href="{{ url_for('login') }}">ログイン</a>
+        <a href="{{ url_for('auth.login') }}">ログイン</a>
         {% endif %}
     </div>
 
@@ -159,18 +159,6 @@
         {% endfor %}
     </ul>
 
-    <!-- ページネーション -->
-    <div>
-        {% if page > 1 %}
-        <a href="?category={{ category }}&page={{ page - 1 }}&search={{ search }}">previous</a>
-        {% endif %}
-
-        <span>ページ {{ page }}</span>
-
-        {% if next_page %}
-        <a href="?category={{ category }}&page={{ next_page }}&search={{ search }}">next</a>
-        {% endif %}
-    </div>
 </body>
 
 </html>
