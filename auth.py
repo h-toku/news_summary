@@ -5,6 +5,7 @@ from flask_mysqldb import MySQL
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired, Length
+from sqlalchemy.exc import IntegrityError
 
 # Blueprintの作成
 auth = Blueprint('auth', __name__)
@@ -28,16 +29,21 @@ def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+
+        new_user = User(username=username, password=password)
         
-        # パスワードをハッシュ化
-        hashed_password = generate_password_hash(password)
+        try:
+            # ユーザーをデータベースに追加
+            db.session.add(new_user)
+            db.session.commit()
+            flash("登録が完了しました！", "success")
+            return redirect(url_for("login"))
+        
+        except IntegrityError:
+            # 重複エラーをキャッチしてフラッシュメッセージを表示
+            db.session.rollback()  # トランザクションをロールバック
+            flash("そのユーザーネームはすでに使われています。別のユーザー名を選んでください。", "error")
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
-        mysql.connection.commit()
-
-        return redirect(url_for('auth.login'))  # 登録後にログイン画面へリダイレクト
-    
     return render_template("register.html")
 
 # ログインのルート
@@ -54,17 +60,11 @@ def login():
         if user_data and check_password_hash(user_data[2], password):
             user = User(id=user_data[0], username=user_data[1])
             login_user(user)
-            return redirect(url_for("profile"))
+            return redirect(url_for("home"))
         else:
             flash("Invalid credentials. Please try again.")
 
     return render_template("login.html")
-
-# プロフィールページ（ログイン必須）
-@auth.route("/profile")
-@login_required
-def profile():
-    return f"Hello, {current_user.username}! You are logged in."
 
 # ログアウトのルート
 @auth.route("/logout")

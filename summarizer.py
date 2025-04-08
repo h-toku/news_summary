@@ -1,58 +1,15 @@
 from news_fetcher import get_news_from_gnews  # GNews APIからニュースを取得
-from transformers import pipeline  # Transformersライブラリからモデルをインポート
-from bs4 import BeautifulSoup  # BeautifulSoupを使ってHTMLをパース
-import requests
+from transformers import T5Tokenizer, T5ForConditionalGeneration # Transformersライブラリからモデルをインポート
 from news_sites import news_sites  # news_sites.py から辞書 news_sites をインポート
+import requests
+from bs4 import BeautifulSoup
+import json
 
 # ニュース要約に使用するAIモデルの読み込み
-summarizer = pipeline("summarization", model="google/pegasus-large")
+model_name = "sonoisa/t5-base-japanese"
+tokenizer = T5Tokenizer.from_pretrained(model_name)
+model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-# 記事の本文やメタ情報を抽出するための関数
-def get_html_content(url, html_element):
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # 記事本文の抽出
-        if html_element:
-            content = soup.select_one(html_element)
-            if content:
-                return content.get_text()
-
-        # メタタグから要約情報を取得する処理
-        meta_element = site_info.get('meta_element')  # 修正：site_infoはsummarize_article内で取得
-        if meta_element:
-            content = soup.find('meta', {'name': 'description'})
-            if content:
-                return content.get('content', '')
-
-        return ''
-    except Exception as e:
-        return ''  # エラーが発生した場合は空文字を返す
-
-# ニュース記事を要約する関数
-def summarize_article(article, site_url):
-    # URLをキーとしてnews_sitesから該当サイトの情報を取得
-    site_info = news_sites.get(site_url)  # URLを使って辞書から情報を取得
-    
-    if not site_info:
-        return "未対応サイトです"  # サイトが未対応の場合はその旨を返す
-    
-    # 記事のURLを取得
-    url = article['url']
-    
-    # html_elementを取得して、その内容を取得する
-    html_element = site_info.get('html_element')
-    article_content = get_html_content(url, html_element)  # 修正：html_elementを渡す
-    
-    if article_content:
-        # 要約処理
-        summary = summarizer(article_content)
-        return summary[0]['summary_text'] if summary else "要約できませんでした"
-    else:
-        return "要約できませんでした"
-
-# ニュースの要約をまとめて取得する関数
 def summarize_news():
     # GNewsからニュースを取得
     articles = get_news_from_gnews(category="general", page=1)
@@ -88,3 +45,67 @@ def summarize_news():
             })
 
     return news_list
+
+# ニュース記事を要約する関数
+def summarize_article(article, site_url):
+    site_info = news_sites.get(site_url)
+    if not site_info:
+        return "未対応サイトです"
+
+    url = article['url']
+    article_content = get_html_content(url, site_info)  # html_element を渡さない
+
+    if article_content:
+        prompt = "summarize: " + article_content  # ← ここ重要！
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, padding="longest", max_length=512)
+        summary_ids = model.generate(inputs["input_ids"], max_length=100, num_beams=4, early_stopping=True)
+        return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    else:
+        return "要約できませんでした"
+
+# ニュースの要約をまとめて取得する関数
+
+import requests
+from bs4 import BeautifulSoup
+import json
+
+def get_html_content(url, site_info):
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"⚠️ HTTPエラー: {response.status_code}")
+        return None
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    tag_name = site_info['tag']
+    content_method = site_info['content_method']
+    element = site_info.get('element')  # element は任意扱い
+
+    target_tag = None
+
+    # タグの取得方法を element の種類に応じて決定
+    if element == "id":
+        target_tag = soup.find(tag_name, id=content_method)
+    elif element == "class":
+        target_tag = soup.find(tag_name, class_=content_method)
+    elif element == "type":
+        # 例: <script type="application/ld+json">
+        script_tags = soup.find_all(tag_name, type=content_method)
+        for script in script_tags:
+            try:
+                data = json.loads(script.string)
+                if data.get("@type") == "NewsArticle":
+                    return data.get("description") or data.get("headline")
+            except Exception:
+                continue
+        print("⚠️ NewsArticle 型の JSON が見つかりませんでした")
+        return None
+    else:
+        print("⚠️ 不正な element 指定です")
+        return None
+
+    # 該当するタグが見つかった場合の処理
+    if target_tag and target_tag.string:
+        return target_tag.string.strip()
+    
+    print("⚠️ 該当タグが見つかりませんでした" + f" (URL: {url})")
+    return None

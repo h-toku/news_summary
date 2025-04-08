@@ -1,0 +1,131 @@
+/* 全体のスタイル */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7fc;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* ヘッダースタイル */
+.header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.header .back-btn {
+    font-size: 16px;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.header .back-btn:hover {
+    text-decoration: underline;
+}
+
+/* ログイン・登録フォームのスタイル */
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-box {
+    text-align: center;
+}
+
+/* ヘッダー */
+h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* 入力フィールド */
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    font-size: 14px;
+    color: #555;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    border-color: #0066cc;
+    outline: none;
+}
+
+/* エラーメッセージ */
+.error-message {
+    color: #ff4d4d;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* ボタン */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #0066cc;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #004b8c;
+}
+
+/* パスワードを忘れた場合 */
+.forgot-password {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.forgot-password a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+
+/* 会員登録リンク */
+.register-link {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.register-link a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}

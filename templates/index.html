@@ -135,8 +135,8 @@
     <form method="get" action="/">
         <label for="category">category:</label>
         <select name="category" id="category">
-            {% for cat in categories %}
-            <option value="{{ cat }}" {% if cat==category %}selected{% endif %}>{{ cat }}</option>
+            {% for cat in CATEGORIES %}
+            <option value="{{ cat }}" {% if cat==CATEGORIES %}selected{% endif %}>{{ cat }}</option>
             {% endfor %}
         </select>
         <button type="submit">Enter</button>

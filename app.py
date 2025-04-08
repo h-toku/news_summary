@@ -57,12 +57,6 @@ def home():
     # ページに渡す情報
     return render_template("index.html", news_list=news_list)
 
-# プロフィールページ（ログイン必須）
-@app.route("/profile")
-@login_required
-def profile():
-    return f"Hello, {current_user.username}! You are logged in."
-
 # ログアウトのルート
 @app.route("/logout")
 @login_required

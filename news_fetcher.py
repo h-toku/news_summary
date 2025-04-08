@@ -16,6 +16,7 @@ def get_news_from_gnews(category="general", page=1, search=None):
         params["q"] = search  # 検索ワードを追加
 
     response = requests.get(url, params=params)
+
     if response.status_code == 200:
         return response.json().get("articles", [])
     else:
