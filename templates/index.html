@@ -88,31 +88,36 @@
         }
 
         /* ページネーションのスタイル */
-        .pagination {
+        .footer-pagination {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f3f3f3;
+            padding: 10px 0;
             text-align: center;
-            margin-top: 20px;
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .pagination a {
-            margin: 0 10px;
-            padding: 6px 12px;
-            background-color: #007BFF;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .pagination a:hover {
-            background-color: #0056b3;
-            text-align: center;
-        }
-
+        .pagination a,
         .pagination span {
+            margin: 0 5px;
+            text-decoration: none;
+            color: #333;
             font-weight: bold;
-            text-align: center;
+        }
+
+        .pagination .current {
+            color: white;
+            background-color: #007bff;
+            padding: 4px 8px;
+            border-radius: 5px;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
         }
     </style>
+
 </head>
 
 <body>
@@ -153,12 +158,56 @@
         {% for news in news_list %}
         <li>
             <a href="{{ news.url }}" target="_blank">{{ news.title }}</a><br>
-            <strong>AI要約:</strong> {{ news.summary }}<br>
+            <strong>AI要約:</strong> <span id="summary-{{ loop.index }}">要約を取得中...</span><br>
             <em>投稿日: {{ news.publishedAt }}</em>
         </li>
+
+        <script>
+            fetch('/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: "{{ news.url }}" })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('summary-{{ loop.index }}').textContent = data.summary;
+                })
+                .catch(error => {
+                    document.getElementById('summary-{{ loop.index }}').textContent = '要約できませんでした';
+                });
+        </script>
         {% endfor %}
+
     </ul>
 
 </body>
+
+<div class="pagination" style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
+
+    <!-- 左矢印 -->
+    {% if page > 1 %}
+    <a href="/?page={{ page - 1 }}">←</a>
+    {% else %}
+    <span style="color: #ccc;">←</span>
+    {% endif %}
+
+    <!-- ページ番号 -->
+    {% for p in page_range %}
+    {% if p == '...' %}
+    <span>...</span>
+    {% elif p == page %}
+    <strong>{{ p }}</strong>
+    {% else %}
+    <a href="{{ url_for('home', page=p) }}">{{ p }}</a>
+    {% endif %}
+    {% endfor %}
+
+    <!-- 右矢印 -->
+    <a href="/?page={{ page + 1 }}">→</a>
+</div>
+
+
 
 </html>

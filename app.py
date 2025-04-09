@@ -1,8 +1,13 @@
-from flask import Flask, render_template, redirect, url_for
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask import Flask, render_template, redirect, url_for, request, jsonify
+from flask_login import LoginManager, UserMixin, login_required, logout_user
 from flask_mysqldb import MySQL
 from auth import auth  # auth.py からBlueprintをインポート
-from summarizer import summarize_news
+from summarizer import summarize_article
+from news_sites import news_sites  # news_sites.py から辞書 news_sites をインポート
+from news_fetcher import get_news_from_gnews  # GNews APIからニュースを取得
+from urllib.parse import urlparse
+import anyio
+
 
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
@@ -49,13 +54,42 @@ def load_user(user_id):
     return None
 
 # ホームページ（ニュース一覧）
-@app.route("/", methods=["GET", "POST"])
-def home():
-    # ニュースの要約を取得
-    news_list = summarize_news()
+@app.route("/")
+async def home():
+    page = int(request.args.get("page", 1))
+    search = request.args.get("search", "")
+    category = request.args.get("category", "general")
 
-    # ページに渡す情報
-    return render_template("index.html", news_list=news_list)
+    all_news = await anyio.to_thread.run_sync(
+        lambda: get_news_from_gnews(search=search, category=category, page=page)
+    )
+
+    # ページごとの件数
+    per_page = 10
+    news_list = all_news
+
+    # ページネーション用ダミー（本当はAPIの総件数を取れたら理想）
+    total_pages = 5  # 仮に5ページまであるとする（必要に応じて変更）
+    if total_pages <= 7:
+        page_range = list(range(1, total_pages + 1))
+    else:
+        page_range = []
+        if page > 4:
+            page_range.append(1)
+            page_range.append("...")
+        page_range.extend(range(max(1, page - 2), min(total_pages + 1, page + 3)))
+        if page + 2 < total_pages:
+            page_range.append("...")
+            page_range.append(total_pages)
+
+    return render_template(
+        "index.html",
+        news_list=news_list,
+        page=page,
+        page_range=page_range,
+        CATEGORIES=CATEGORIES,
+        search=search
+    )
 
 # ログアウトのルート
 @app.route("/logout")
@@ -66,3 +100,36 @@ def logout():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, debug=True, use_reloader=False)
+
+def get_page_range(current_page):
+    page_range = [1]
+    if current_page > 4:
+        page_range.append("...")
+        page_range += [current_page - 2, current_page - 1, current_page, current_page + 1, current_page + 2]
+    else:
+        page_range += list(range(2, 7))
+    return page_range
+
+
+@app.route("/summarize", methods=["POST"])
+async def summarize():
+    try:
+        data = await request.get_json()
+        url = data.get("url")
+
+        if not url:
+            return jsonify({"summary": "URLが指定されていません"}), 400
+
+        site_url = urlparse(url).scheme + "://" + urlparse(url).netloc
+        site_info = news_sites.get(site_url)
+
+        if not site_info:
+            return jsonify({"summary": "未対応のニュースサイトです"})
+
+        article = {"url": url}
+        summary = await summarize_article(article, site_url)
+
+        return jsonify({"summary": summary})
+    except Exception as e:
+        return jsonify({"summary": f"要約中にエラーが発生しました: {str(e)}"}), 500
+

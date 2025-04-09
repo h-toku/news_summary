@@ -11,6 +11,8 @@ def get_news_from_gnews(category="general", page=1, search=None):
         "country": "jp",
         "category": category,
         "sortby": "publishedAt", 
+        "max": 10,  # 1ページあたり最大件数
+        "page": page  # ← ページ番号を追加
     }
     if search:
         params["q"] = search  # 検索ワードを追加
