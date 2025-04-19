@@ -4,7 +4,7 @@ from news_sites import news_sites  # news_sites.py から辞書 news_sites を�
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import json
-import aiohttp
+import aiohttp # type: ignore
 import asyncio
 
 # ニュース要約に使用するAIモデルの読み込み

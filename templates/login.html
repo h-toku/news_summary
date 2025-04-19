@@ -1,49 +1,76 @@
 <!DOCTYPE html>
 <html lang="ja">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ログイン</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
 
-<body>
+  <body>
     <div class="header">
-        <a href="{{ url_for('home') }}" class="back-btn">ホームに戻る</a>
+      <a href="{{ url_for('home') }}" class="back-btn">ホームに戻る</a>
     </div>
 
     <div class="login-container">
-        <div class="login-box">
-            <h2>ログイン</h2>
-            <form method="POST">
-                <!-- ユーザー名入力 -->
-                <div class="input-group">
-                    <label for="username">ユーザー名</label>
-                    <input type="text" id="username" name="username" required placeholder="ユーザー名を入力">
-                </div>
+      <div class="login-box">
+        <h2>ログイン</h2>
 
-                <!-- パスワード入力 -->
-                <div class="input-group">
-                    <label for="password">パスワード</label>
-                    <input type="password" id="password" name="password" required placeholder="パスワードを入力">
-                </div>
-
-                <!-- エラーメッセージ -->
-                {% if error %}
-                <div class="error-message">{{ error }}</div>
-                {% endif %}
-
-                <!-- ログインボタン -->
-                <button type="submit" class="login-btn">ログイン</button>
-
-                <!-- 会員登録リンク -->
-                <div class="register-link">
-                    <p>アカウントがありませんか？ <a href="{{ url_for('auth.register') }}">会員登録</a></p>
-                </div>
-            </form>
+        <!-- フラッシュメッセージ表示部分 -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category }} {% if category == 'error' %}error-container{% endif %}"
+        >
+          {{ message }}
         </div>
-    </div>
-</body>
+        {% endfor %} {% endif %} {% endwith %}
 
+        <form method="POST">
+          <!-- ユーザー名入力 -->
+          <div class="input-group">
+            <label for="username">ユーザー名</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              required
+              placeholder="ユーザー名を入力"
+            />
+          </div>
+
+          <!-- パスワード入力 -->
+          <div class="input-group">
+            <label for="password">パスワード</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="パスワードを入力"
+            />
+          </div>
+
+          <!-- エラーメッセージ -->
+          {% if error %}
+          <div class="error-message">{{ error }}</div>
+          {% endif %}
+
+          <!-- ログインボタン -->
+          <button type="submit" class="login-btn">ログイン</button>
+
+          <!-- 会員登録リンク -->
+          <div class="register-link">
+            <p>
+              アカウントがありませんか？
+              <a href="{{ url_for('auth.register') }}">会員登録</a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
 </html>

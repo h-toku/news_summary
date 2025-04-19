@@ -18,3 +18,5 @@ aiohttp
 celery
 anyio
 flask[async]
+flask-migrate
+pymysql

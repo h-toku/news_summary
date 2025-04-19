@@ -10,5 +10,5 @@ news_sites = {
     "https://japan.cnet.com/" : { "tag":"div","element":"id", "content_method": "NWrelart:Body"},
     "https://prtimes.jp/"   : { "tag":"script","element":"id", "content_method": "__NEXT_DATA__"},
     "https://forbesjapan.com/" : { "tag":"div","element":"class", "content_method": "article-content*****"},
-    "https://news.golfdigest.co.jp/" : { "tag":"div","element":"class", "content_method": "article_body"},    
+    "https://news.golfdigest.co.jp/" : { "tag":"div","element":"class", "content_method": "article_body"},
 }

@@ -7,26 +7,36 @@ from news_sites import news_sites  # news_sites.py から辞書 news_sites を�
 from news_fetcher import get_news_from_gnews  # GNews APIからニュースを取得
 from urllib.parse import urlparse
 import anyio
-
+from flask_migrate import Migrate
+from favorite import db  # favorite.pyからdbをインポート
+from flask_sqlalchemy import SQLAlchemy
 
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
 app.secret_key = "top04259984"
 
-# ニュースカテゴリ（GNewsに対応）
-CATEGORIES = [
-    'general', 'world', 'nation', 'business', 'technology',
-    'entertainment', 'sports', 'science', 'health'
-]
-
 # MySQLの設定
-app.config['MYSQL_HOST'] = 'mysql'
+app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'tokuhara'
 app.config['MYSQL_PASSWORD'] = 'top04259984'
 app.config['MYSQL_DB'] = 'news_summary'
 
+# SQLAlchemyの設定
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://tokuhara:top04259984@mysql:3330/news_summary'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config.from_object('config')  # config.py から設定を読み込む
+db = SQLAlchemy(app)
+
 # MySQLとの接続設定
 mysql = MySQL(app)
+
+# SQLAlchemyの初期化
+db.init_app(app)
+
+# Flask-Migrateの設定
+migrate = Migrate(app, db)
 
 # Flask-Loginの設定
 login_manager = LoginManager()

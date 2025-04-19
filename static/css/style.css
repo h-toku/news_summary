@@ -129,3 +129,29 @@ h2 {
 .register-link a:hover {
     text-decoration: underline;
 }
+.error-container {
+    background-color: #d32f2f;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    margin: 10px 0;
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.alert-error {
+    border: none;
+}
+
+.alert-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
