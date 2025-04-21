@@ -1,6 +1,82 @@
-<h2>お気に入りニュース</h2>
-<ul>
-  {% for news in news_list %}
-  <li>{{ news.title }}</li>
-  {% endfor %}
-</ul>
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h1 class="text-center mb-4">お気に入り記事</h1>
+
+  {% if favorites %}
+  <div class="row">
+    {% for favorite in favorites %}
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <h5 class="card-title">{{ favorite.title }}</h5>
+            <button
+              class="btn btn-link p-0 remove-favorite"
+              data-url="{{ favorite.url }}"
+            >
+              <i class="bi bi-heart-fill text-danger"></i>
+            </button>
+          </div>
+          <p class="card-text text-muted">
+            <small
+              >{{ favorite.published_at.strftime('%Y-%m-%d %H:%M') }}</small
+            >
+          </p>
+          <p class="card-text">
+            <strong>AI要約:</strong> {{ favorite.summary }}
+          </p>
+          <a href="{{ favorite.url }}" target="_blank" class="btn btn-primary"
+            >元の記事を読む</a
+          >
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-center">お気に入りの記事はまだありません。</p>
+  {% endif %}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const removeButtons = document.querySelectorAll(".remove-favorite");
+
+    removeButtons.forEach((button) => {
+      button.addEventListener("click", async function () {
+        const url = this.dataset.url;
+
+        try {
+          const response = await fetch("/api/favorites", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: url,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.status === "removed") {
+            // カードを削除
+            const card = this.closest(".col-12");
+            card.remove();
+
+            // お気に入りが0件になった場合、メッセージを表示
+            const remainingCards = document.querySelectorAll(".card");
+            if (remainingCards.length === 0) {
+              const container = document.querySelector(".container");
+              container.innerHTML =
+                '<h1 class="text-center mb-4">お気に入り記事</h1><p class="text-center">お気に入りの記事はまだありません。</p>';
+            }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

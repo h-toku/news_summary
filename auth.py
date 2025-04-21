@@ -1,19 +1,14 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import UserMixin, login_user, login_required, logout_user
-from werkzeug.security import check_password_hash
-from flask_mysqldb import MySQL
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired, Length
 from sqlalchemy.exc import IntegrityError
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db
 
 # Blueprintの作成
 auth = Blueprint('auth', __name__)
-
-# MySQLとの接続設定
-mysql = MySQL()
-db = SQLAlchemy()
 # ユーザー情報を保持するクラス（Flask-Login用）
 
 
@@ -47,21 +42,25 @@ def register():
             flash("パスワードが一致していません。", "error")
             return render_template("register.html")
 
-        new_user = User(username=username, password=password)
-
         try:
-            # ユーザーをデータベースに追加
-            cursor = mysql.connection.cursor()
-            cursor.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
-                (new_user.username, new_user.password)
+            # ユーザーをデータベースに追加 (SQLAlchemyを使用)
+            hashed_password = generate_password_hash(password)
+            db.session.execute(
+                db.text(
+                    "INSERT INTO users (username, password) "
+                    "VALUES (:username, :password)"
+                ),
+                {
+                    "username": username,
+                    "password": hashed_password
+                }
             )
-            mysql.connection.commit()
+            db.session.commit()
             flash("登録が完了しました！", "success")
             return redirect(url_for("auth.login"))
         except IntegrityError:
             # 重複エラーをキャッチしてフラッシュメッセージを表示
-            db.session.rollback()  # トランザクションをロールバック
+            db.session.rollback()
             flash("そのユーザーネームはすでに使われています。別のユーザー名を選んでください。", "error")
 
     return render_template("register.html")
@@ -74,16 +73,21 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user_data = cursor.fetchone()
+        result = db.session.execute(
+            db.text(
+                "SELECT id, username, password "
+                "FROM users WHERE username = :username"
+            ),
+            {"username": username}
+        )
+        user_data = result.fetchone()
 
         if user_data and check_password_hash(user_data[2], password):
             user = User(id=user_data[0], username=user_data[1])
             login_user(user)
             return redirect(url_for("home"))
         else:
-            flash("メールアドレスまたはパスワードが正しくありません。", "error")
+            flash("ユーザー名/パスワードが間違っています。", "error")
 
     return render_template("login.html")
 

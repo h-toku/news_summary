@@ -1,213 +1,175 @@
-<!DOCTYPE html>
-<html lang="ja">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>news</title>
-
-    <style>
-        /* ヘッダーのスタイル */
-        h1 {
-            color: #fff;
-            background-color: #333;
-            padding: 10px;
-            text-align: center;
-            line-height: 1;
-        }
-
-        h2 {
-            color: #fff;
-            background-color: #333;
-            padding: 6px;
-            text-align: center;
-        }
-
-        /* カテゴリ選択フォーム */
-        form {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        label {
-            margin-right: 10px;
-        }
-
-        select,
-        input {
-            padding: 5px;
-            font-size: 16px;
-        }
-
-        button {
-            padding: 6px 12px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        /* ニュースリストのスタイル */
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        li {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-
-        li:hover {
-            background-color: #f1f1f1;
-        }
-
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        strong {
-            color: #333;
-        }
-
-        em {
-            color: #888;
-        }
-
-        /* ページネーションのスタイル */
-        .footer-pagination {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background-color: #f3f3f3;
-            padding: 10px 0;
-            text-align: center;
-            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .pagination a,
-        .pagination span {
-            margin: 0 5px;
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-        }
-
-        .pagination .current {
-            color: white;
-            background-color: #007bff;
-            padding: 4px 8px;
-            border-radius: 5px;
-        }
-
-        .pagination .disabled {
-            color: #aaa;
-        }
-    </style>
-
-</head>
-
-<body>
-    <h1>
-        <font size="10">最新ニュース</font><br>
-        <font size="4">最新のニュースをAIが要約してます。</font>
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">
+        <span class="display-4">最新ニュース</span><br>
+        <small class="text-muted">最新のニュースをAIが要約してます。</small>
     </h1>
 
-    <!-- ユーザー認証の状態を表示 -->
-    <div class="user-info">
-        {% if current_user.is_authenticated %}
-        <p>Welcome{{ current_user.username }}!!</p>
-        <a href="{{ url_for('auth.logout') }}">ログアウト</a>
-        {% else %}
-        <p><a href="{{ url_for('auth.login') }}">ログイン/会員登録</a>で、お気に入り機能が使えます。</p>
-        {% endif %}
-    </div>
-
     <!-- カテゴリ選択フォーム -->
-    <form method="get" action="/">
-        <label for="category">category:</label>
-        <select name="category" id="category">
-            {% for cat in CATEGORIES %}
-            <option value="{{ cat }}" {% if cat==CATEGORIES %}selected{% endif %}>{{ cat }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Enter</button>
+    <form method="get" action="/" class="mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <label class="input-group-text" for="category">カテゴリ:</label>
+                    <select name="category" id="category" class="form-select">
+                        {% for key, value in CATEGORIES.items() %}
+                            <option value="{{ key }}" {% if key == category %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">選択</button>
+                </div>
+            </div>
+        </div>
     </form>
 
     <!-- 検索フォーム -->
-    <form method="get" action="/">
-        <label for="search">Search:</label>
-        <input type="text" id="search" name="search" value="{{ search }}">
-        <button type="submit">Enter</button>
+    <form method="get" action="/" class="mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" id="search" name="search" value="{{ search }}" class="form-control" placeholder="検索...">
+                    <button type="submit" class="btn btn-primary">検索</button>
+                </div>
+            </div>
+        </div>
     </form>
 
-    <ul>
+    <div class="row">
         {% for news in news_list %}
-        <li>
-            <a href="{{ news.url }}" target="_blank">{{ news.title }}</a><br>
-            <strong>AI要約:</strong> <span id="summary-{{ loop.index }}">要約を取得中...</span><br>
-            <em>投稿日: {{ news.publishedAt }}</em>
-        </li>
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title">{{ news.title }}</h5>
+                            {% if current_user.is_authenticated %}
+                                <button class="btn btn-link p-0 favorite-btn" 
+                                        data-url="{{ news.url }}"
+                                        data-title="{{ news.title }}"
+                                        data-summary="{{ news.summary }}"
+                                        data-published-at="{{ news.published_at }}"
+                                        data-site-name="{{ news.site_name }}"
+                                        {% if news.is_favorite %}data-favorite="true"{% endif %}>
+                                    <i class="bi {% if news.is_favorite %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                        <p class="card-text text-muted">
+                            <small>{{ news.published_at }} | {{ news.site_name }}</small>
+                        </p>
+                        <p class="card-text">
+                            <strong>AI要約:</strong> <span id="summary-{{ loop.index }}">要約を取得中...</span>
+                        </p>
+                        <a href="{{ news.url }}" target="_blank" class="btn btn-primary">元の記事を読む</a>
+                    </div>
+                </div>
+            </div>
 
-        <script>
-            fetch("http://localhost:5000/summarize", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: "{{ news.url }}" })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('summary-{{ loop.index }}').textContent = data.summary;
+            <script>
+                fetch("http://localhost:5000/summarize", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: "{{ news.url }}" })
                 })
-                .catch(error => {
-                    document.getElementById('summary-{{ loop.index }}').textContent = '要約できませんでした';
-                });
-        </script>
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('summary-{{ loop.index }}').textContent = data.summary;
+                    })
+                    .catch(error => {
+                        document.getElementById('summary-{{ loop.index }}').textContent = '要約できませんでした';
+                    });
+            </script>
         {% endfor %}
+    </div>
 
-    </ul>
+    <!-- ページネーション -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <!-- 左矢印 -->
+            {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="/?page={{ page - 1 }}&search={{ search }}&category={{ category }}">←</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">←</span>
+                </li>
+            {% endif %}
 
-</body>
+            <!-- ページ番号 -->
+            {% for p in page_range %}
+                {% if p == '...' %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% elif p == page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ p }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="/?page={{ p }}&search={{ search }}&category={{ category }}">{{ p }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
 
-<div class="pagination" style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
-
-    <!-- 左矢印 -->
-    {% if page > 1 %}
-    <a href="/?page={{ page - 1 }}">←</a>
-    {% else %}
-    <span style="color: #ccc;">←</span>
-    {% endif %}
-
-    <!-- ページ番号 -->
-    {% for p in page_range %}
-    {% if p == '...' %}
-    <span>...</span>
-    {% elif p == page %}
-    <strong>{{ p }}</strong>
-    {% else %}
-    <a href="{{ url_for('home', page=p) }}">{{ p }}</a>
-    {% endif %}
-    {% endfor %}
-
-    <!-- 右矢印 -->
-    <a href="/?page={{ page + 1 }}">→</a>
+            <!-- 右矢印 -->
+            <li class="page-item">
+                <a class="page-link" href="/?page={{ page + 1 }}&search={{ search }}&category={{ category }}">→</a>
+            </li>
+        </ul>
+    </nav>
 </div>
 
-
-
-</html>
+{% if current_user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favoriteButtons = document.querySelectorAll('.favorite-btn');
+    
+    favoriteButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const url = this.dataset.url;
+            const title = this.dataset.title;
+            const summary = this.dataset.summary;
+            const publishedAt = this.dataset.publishedAt;
+            const siteName = this.dataset.siteName;
+            const isFavorite = this.dataset.favorite === 'true';
+            
+            try {
+                const response = await fetch('/api/favorites', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        title: title,
+                        summary: summary,
+                        published_at: publishedAt,
+                        site_name: siteName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'added') {
+                    this.dataset.favorite = 'true';
+                    this.querySelector('i').classList.remove('bi-heart');
+                    this.querySelector('i').classList.add('bi-heart-fill', 'text-danger');
+                } else {
+                    this.dataset.favorite = 'false';
+                    this.querySelector('i').classList.remove('bi-heart-fill', 'text-danger');
+                    this.querySelector('i').classList.add('bi-heart');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

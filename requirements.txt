@@ -20,3 +20,4 @@ anyio
 flask[async]
 flask-migrate
 pymysql
+cryptography

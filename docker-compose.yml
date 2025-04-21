@@ -7,25 +7,26 @@ services:
       - mysql # mysql コンテナに依存
     volumes:
       - .:/app
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - MYSQL_HOST=mysql
-      - MYSQL_USER=tokuhara
-      - MYSQL_PASSWORD=password
-      - MYSQL_DB=news_summary
 
   mysql:
     image: mysql:8.0
     container_name: mysql_container
-    environment:
-      MYSQL_ROOT_PASSWORD: password # rootユーザーのパスワード
-      MYSQL_DATABASE: news_summary # 作成するデータベース名
-      MYSQL_USER: tokuhara # 作成するユーザー名
-      MYSQL_PASSWORD: top04259984 # 作成するユーザーのパスワード
+    env_file:
+      - .env
     ports:
-      - "3330:3330" # MySQLのポートをホストとコンテナでマッピング
+      - "3330:3306" # ホストの3330をコンテナの3306(MySQLデフォルト)にマッピング
     volumes:
       - mysql_data:/var/lib/mysql # 永続化するボリューム
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # 初期化スクリプト
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
 volumes:
   mysql_data:
