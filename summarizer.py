@@ -10,13 +10,12 @@ model_name = "csebuetnlp/mT5_multilingual_XLSum"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-async def summarize_news(news_list, page):
+async def summarize_news(news_list_input, page):
     # GNewsからニュースを取得
     articles = get_news_from_gnews(category="general", page=page)
 
     tasks = []
     for article in articles:
-        article_url = article.get('url', '')
         site_url = article.get('source', {}).get('url', 'No Source URL')
         # 要約を非同期で取得
         tasks.append(
