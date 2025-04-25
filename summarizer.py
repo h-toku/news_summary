@@ -18,14 +18,13 @@ async def summarize_news(news_list_input, page):
     for article in articles:
         site_url = article.get('source', {}).get('url', 'No Source URL')
         # 要約を非同期で取得
-        tasks.append(
-            summarize_article(article, site_url)
-        )
+        tasks.append(summarize_article(article, site_url))
 
-        summaries = await asyncio.gather(*tasks)
-        
-        # ニュースリストに追加
-        news_output = []
+    # 非同期タスクをまとめて実行
+    summaries = await asyncio.gather(*tasks)
+    
+    # ニュースリストに追加
+    news_output = []
     for article, summary in zip(articles, summaries):
         news_output.append({
             "title": article.get('title', 'No Title'),
@@ -33,10 +32,12 @@ async def summarize_news(news_list_input, page):
             "url": article.get('url', ''),
             "publishedAt": article.get('publishedAt', 'No Date'),
             "site_name": article.get('source', {}).get('name', 'No Source'),
-            "site_url": site_url
+            "site_url": article.get('source', {}).get('url', 'No Source URL'),
+            "is_favorite": False  # 修正：article内でsite_urlを取得
         })
 
     return news_output
+
 
 def clean_text(text):
     if not text:
