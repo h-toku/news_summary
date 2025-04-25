@@ -1,10 +1,7 @@
 from news_fetcher import get_news_from_gnews  # GNews APIからニュースを取得
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM # Transformersライブラリからモデルをインポート
 from news_sites import news_sites  # news_sites.py から辞書 news_sites をインポート
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup
-import json
-import aiohttp # type: ignore
+from scraper import get_html_content
 import asyncio
 import re
 
@@ -133,47 +130,5 @@ async def summarize_article(article, site_url):
         print(f"要約生成エラー: {str(e)}")
         return "要約できませんでした"
 
-# ニュースの要約をまとめて取得する関数
 
-async def get_html_content(url, site_info):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status != 200:
-                    print(f"⚠️ HTTPエラー: {response.status}")
-                    return None
-
-                html = await response.text()
-                soup = BeautifulSoup(html, 'html.parser')
-                
-                # メタデータからの本文取得を試みる
-                meta_description = soup.find('meta', {'name': 'description'})
-                if meta_description:
-                    content = meta_description.get('content', '')
-                    if len(content) > 100:  # 十分な長さがある場合
-                        return content
-
-                # 本文の取得
-                tag_name = site_info['tag']
-                content_method = site_info['content_method']
-                element = site_info['element']
-
-                if element == "class":
-                    target_tags = soup.find_all(tag_name, class_=content_method)
-                    if target_tags:
-                        # 全てのテキストを結合
-                        content = ' '.join([tag.get_text() for tag in target_tags])
-                        return content
-
-                elif element == "id":
-                    target_tag = soup.find(tag_name, id=content_method)
-                    if target_tag:
-                        return target_tag.get_text()
-
-                print(f"⚠️ 本文が見つかりませんでした (URL: {url})")
-                return None
-
-    except Exception as e:
-        print(f"⚠️ エラー: {str(e)}")
-        return None
 
