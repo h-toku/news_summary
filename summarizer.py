@@ -15,35 +15,32 @@ model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
 async def summarize_news(news_list, page):
     # GNewsからニュースを取得
-    articles = get_news_from_gnews(category="general", page=1)
+    articles = get_news_from_gnews(category="general", page=page)
 
-    news_list = []
+    tasks = []
     for article in articles:
         article_url = article.get('url', '')
-        
-        # サイト情報を取得（URLから抽出）
-        site_url = extract_site_url(article_url)
-
+        site_url = article.get('source', {}).get('url', 'No Source URL')
         # 要約を非同期で取得
-        summary = await summarize_article(article, site_url)
+        tasks.append(
+            summarize_article(article, site_url)
+        )
+
+        summaries = await asyncio.gather(*tasks)
         
         # ニュースリストに追加
-        news_list.append({
+        news_output = []
+    for article, summary in zip(articles, summaries):
+        news_output.append({
             "title": article.get('title', 'No Title'),
             "summary": summary,
-            "url": article_url,
+            "url": article.get('url', ''),
             "publishedAt": article.get('publishedAt', 'No Date'),
+            "site_name": article.get('source', {}).get('name', 'No Source'),
+            "site_url": site_url
         })
-    
-    return news_list
 
-# サイトURLを抽出する関数（URLからサイトを決定）
-def extract_site_url(url):
-    # ここでURLからドメイン部分などを抽出
-    # 例: https://example.com/news -> "https://example.com"
-    parsed_url = urlparse(url)
-    site_url = parsed_url.scheme + "://" + parsed_url.netloc
-    return site_url
+    return news_output
 
 def clean_text(text):
     if not text:
@@ -90,11 +87,13 @@ async def summarize_article(article, site_url):
         # テキストのクリーニング
         cleaned_content = clean_text(article_content)
         
-        if not cleaned_content or len(cleaned_content) < 100:
+        if not cleaned_content:
             return "要約できませんでした"
+        elif len(cleaned_content) < 100:
+            return cleaned_content
 
         # 要約生成
-        prompt = f"以下のニュース記事を3文程度の簡潔な日本語で要約してください: {cleaned_content}"
+        prompt = f"以下のニュース記事を簡潔な日本語で要約してください: {cleaned_content}"
         
         # 入力テキストを適切な長さに調整
         inputs = tokenizer(
@@ -125,9 +124,10 @@ async def summarize_article(article, site_url):
         summary = re.sub(r'要約[:：]', '', summary)
         summary = summary.strip()
         
-        if not summary or len(summary) < 20:
+        if len(summary) < 20:
+            return cleaned_content
+        elif not summary:
             return "要約できませんでした"
-            
         return summary
     except Exception as e:
         print(f"要約生成エラー: {str(e)}")
